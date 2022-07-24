@@ -175,7 +175,7 @@ pub async fn server_status(conn: DbConn) -> Template {
 async fn main() -> Result<(), rocket::Error> {
     let _rocket = rocket::build()
         .mount("/api/v1", routes![report_api, data_api])
-        .mount("/", routes![dstat_page])
+        .mount("/", routes![dstat_page, server_status])
         .mount("/fonts", FileServer::from("fonts"))
         .mount("/static", FileServer::from("static"))
         .mount("/app-assets", FileServer::from("assets"))

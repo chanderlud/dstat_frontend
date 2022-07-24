@@ -1179,13 +1179,13 @@
             border: 1px solid white;
             box-sizing: content-box;
             z-index: 10000;
-    }
+        }
 
-    .jqsfield {
-        color: white;
-        font: 10px arial, san serif;
-        text-align: left;
-    }
+        .jqsfield {
+            color: white;
+            font: 10px arial, san serif;
+            text-align: left;
+        }
     </style>
     <link href="/static/css.css" rel="stylesheet" type="text/css">
     <title>Custom L7 DSTAT</title>
@@ -1335,72 +1335,48 @@
     <div class="content-overlay"></div>
     <div class="header-navbar-shadow"></div>
     <div class="content-wrapper">
-        <div class="content-header row">
-        </div>
-        <div class="content-body">
-            <section id="dashboard-analytics">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
+        <div class="row" id="table-borderless">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-content">
+                        <div class="card-body">
+                            <div style="text-align: center;"><h3 class="card-title mb-0">Server Status</h3>
                                 <br>
+                                <h5>See availability of the Dstat servers</h5>
                                 <br>
+                                <hr>
                                 <br>
-                                <h4 class="mb-0" id="ipandtext">Live Layer 7 DSTAT {{ id }} » {{ url }} « </h4>
-                                <br>
-                                <br>
-                            </div>
-                            <section id="apexchart">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <br>
-                                        <div style="text-align: center;">
-                                            <button type="button"
-                                                    class="btn btn-success mr-1 mb-1 waves-effect waves-light"
-                                                    data-toggle="modal" data-target="#FAQ"><i
-                                                    class="feather icon-help-circle"></i> FAQ
-                                            </button>
-                                            <button type="button" id="copyToClipboard"
-                                                    class="btn btn-danger mr-1 mb-1 waves-effect waves-light"
-                                                    onclick="setClipboard()" data-href="{{ url }}"><i
-                                                    class="feather icon-clipboard"></i> Copy URL
-                                            </button>
-                                        </div>
-                                        <br>
-                                    </div>
-                                    <div class="card-content">
-                                        <div class="card-body">
-                                            <div id="L7dstat" data-highcharts-chart="0" style="overflow: hidden;">
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover-animation mb-0">
+                                        <thead>
+                                        <tr>
+                                            <th style="text-align:center" scope="col"><b>Server</b></th>
+                                            <th style="text-align:center" scope="col"><b>Status</b></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                        {{#each statuses}}
+                                            <thead>
+                                            <tr>
+                                                <th style="text-align:center" scope="col"><b>{{this.0}}</b></th>
+                                                <th style="text-align:center" scope="col"><b>
+                                                    {{#if this.1}}
+                                                        Online
+                                                    {{/if}}
+                                                    {{#unless this.1}}
+                                                        Offline
+                                                    {{/unless}}
+                                                </b></th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        {{/each}}
+                                    </table>
+                                    <br>
                                 </div>
-                            </section>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            <div class="modal fade" id="FAQ" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
-                 aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-dialog-centered modal-dialog-scrollable modal-lg"
-                     role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="exampleModalCenterTitle">More about this DSTAT and the
-                                filter!</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">×</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <br>
-                            <div style="text-align: center;"><h3>Please hit the graph only some minutes and not over
-                                hours!</h3></div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-danger waves-effect waves-light" data-dismiss="modal">
-                                Close
-                            </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1447,145 +1423,6 @@
 <script src="/static/fastclick.js"></script>
 <script src="/static/highcharts.js"></script>
 
-<script>
-    function setClipboard() {
-        const tempInput = document.createElement("input");
-        const value = document.getElementById("copyToClipboard").getAttribute("data-href");
-        tempInput.style = "position: absolute; left: -1000px; top: -1000px";
-        tempInput.value = value;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand("copy");
-        document.body.removeChild(tempInput);
-    }
-
-    $(document).ready(function () {
-        let chart; // global
-
-        $(window).load(function () {
-            initiateChart("L7dstat");
-            parseFile();
-        });
-
-        function parseFile() {
-            const id = "{{ id }}";
-            const data_url = "https://" + document.domain + "/api/v1/data?name=" + id;
-
-            $.ajax({
-                url: data_url,
-                dataType: "text",
-                method: "get",
-                timeout: 1000,
-                error: function () {
-                    console.log("Catching timeout");
-                    setTimeout(parseFile, 3000);
-                },
-                cache: false
-            }).done(
-                    function (data) {
-                        const series = chart.series[0];
-                        const current = parseInt(data);
-
-                        const shift = series.data.length > 40;
-
-                        series.addPoint(
-                                [Math.floor($.now()),
-                                    current
-                                ],
-                                true,
-                                shift
-                        );
-                        setTimeout(parseFile, 1000);
-                    }).fail(function () {
-                console.log("No Internet connection");
-            });
-        }
-
-        function initiateChart(div_id) {
-            Highcharts.createElement('link', {
-                href: '//fonts.googleapis.com/css?family=Unica+One',
-                rel: 'stylesheet',
-                type: 'text/css',
-
-            }, null, document.getElementsByTagName('head')[0]);
-
-            const options = {
-                plotOptions: {
-                    series: {
-                        events: {
-                            legendItemClick: function (event) {
-                                event.preventDefault();
-                            }
-                        }
-                    }
-                },
-                chart: {
-                    zoomType: '',
-                    renderTo: div_id,
-                    style: {
-                        fontFamily: "'Unica One', sans-serif",
-
-                    },
-                    backgroundColor: '#10163a',
-                },
-                title: {
-                    text: 'Custom Layer 7 Dstat',
-                    style: {
-                        color: "#c2c6dc",
-                    }
-                },
-                xAxis: {
-                    type: 'datetime',
-                    dateTimeLabelFormats: {
-                        day: '%a'
-                    }
-                },
-                yAxis: {
-                    labels: {
-                        style: {
-                            color: '#c2c6dc'
-                        },
-                    },
-                    title: {
-                        text: 'Requests/Sec',
-                        margin: 80,
-                        style: {
-                            color: '#c2c6dc'
-                        }
-                    }
-                },
-                credits: {
-                    enabled: false
-                },
-                legend: {
-                    useHTML: true,
-                    symbolWidth: 0,
-                    labelFormatter: function () {
-                        return '<div>' +
-                                '<div style="display: inline-block; margin-right:5px"> </div>' +
-                                "<span style='color: #c2c6dc;'> " + this.name + " </span>" +
-                                '</div>'
-                    }
-
-                },
-                subtitle: {
-                    style: {
-                        color: '#c2c6dc',
-                        font: 'bold 12px "Trebuchet MS", Verdana, sans-serif'
-                    }
-                },
-                series: [{
-                    type: 'area',
-                    name: 'Total Requests',
-                    color: '#00cfe8',
-                    data: []
-                }]
-            };
-
-            chart = new Highcharts.Chart(options);
-        }
-    });
-</script>
 <svg id="SvgjsSvg1001" width="2" height="0" xmlns="http://www.w3.org/2000/svg" version="1.1"
      xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.com/svgjs"
      style="overflow: hidden; top: -100%; left: -100%; position: absolute; opacity: 0;">
